@@ -1,0 +1,118 @@
+Program.Sub.ScreenSU.Start
+Gui.FormTerms..Create
+Gui.FormTerms..Caption("Vendor Payment Terms")
+Gui.FormTerms..Size(6915,2880)
+Gui.FormTerms..MinX(0)
+Gui.FormTerms..MinY(0)
+Gui.FormTerms..Position(0,0)
+Gui.FormTerms..BackColor(-2147483633)
+Gui.FormTerms..MousePointer(0)
+Gui.FormTerms..Event(UnLoad,FormTerms_UnLoad)
+Gui.FormTerms.txtTerms.Create(TextBoxR)
+Gui.FormTerms.txtTerms.Size(6405,2040)
+Gui.FormTerms.txtTerms.Position(105,120)
+Gui.FormTerms.txtTerms.Anchor(15)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+	'AP > Trans > AP Batch Entry > New > Invoice/Accrual Populate Hook
+	F.Intrinsic.Control.Case(33501)
+		V.Passed.000019.Set("Terms")
+		F.Intrinsic.Control.End
+		
+	'AP > Trans > AP Batch Entry > New > Invoice/Accrual Script 1 Hook
+	F.Intrinsic.Control.Case(33506)
+		'Vendor passed.000105
+		F.Intrinsic.Control.If(V.Passed.000105.Trim,<>,"")
+			F.Intrinsic.Control.CallSub(Get_Terms,"Vendor",V.Passed.000105)
+			Gui.FormTerms..Show
+			Gui.FormTerms..AlwaysOnTop(True)
+			Gui.FormTerms..AlwaysOnTop(False)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.UI.Msgbox("Select a Vendor","Attention")
+			F.Intrinsic.Control.End
+		F.Intrinsic.Control.EndIf
+		
+	'AP > Trans > AP Batch Entry > New > Invoice Populate Hook
+	F.Intrinsic.Control.Case(35105)
+		V.Passed.000051.Set("Terms")
+		F.Intrinsic.Control.End
+		
+	'AP > Trans > AP Batch Entry > New > Invoice Script 1 Hook
+	F.Intrinsic.Control.Case(35121)
+		'Vendor passed.000002
+		F.Intrinsic.Control.If(V.Passed.000002.Trim,<>,"")
+			F.Intrinsic.Control.CallSub(Get_Terms,"Vendor",V.Passed.000002)
+			Gui.FormTerms..Show
+			Gui.FormTerms..AlwaysOnTop(True)
+			Gui.FormTerms..AlwaysOnTop(False)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.UI.Msgbox("Select a Vendor","Attention")
+			F.Intrinsic.Control.End
+		F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.Control.CaseElse
+		F.Intrinsic.Control.End
+
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6758_AP_INV_VEND_TERMS.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormTerms_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.FormTerms_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("FormTerms_UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("FormTerms_UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.FormTerms_UnLoad.End
+
+Program.Sub.Get_Terms.Start
+F.Intrinsic.Control.SetErrorHandler("Get_Terms_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+V.Local.sRet.Declare(String,"")
+
+F.Intrinsic.String.Build("select rtrim(Terms_Code) + ' - ' + Terms_Message from V_AP_TERMS a Join V_Vendor_Pay_To b on a.Terms_code = b.Payment_Terms Where b.Vendor = '{0}'",V.Args.Vendor.Trim,V.Local.sSql)
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.ODBC.Connection!Con.ExecuteAndReturn(V.Local.sSql,V.Local.sRet)
+F.ODBC.Connection!Con.Close
+
+Gui.FormTerms.txtTerms.Text(V.Local.sRet.Trim)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Get_Terms_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6758_AP_INV_VEND_TERMS.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormTerms_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Get_Terms.End
